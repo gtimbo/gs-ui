@@ -197,7 +197,7 @@ class Camera(protected val graph:GraphicGraph) extends org.graphstream.ui.view.C
   		graph.getEachNode.foreach { n =>	
   			val node = n.asInstanceOf[GraphicNode]
 			
-  			if( nodeContains( node, x, y ) )
+  			if( (!node.hidden) && nodeContains( node, x, y ) )
   				ge = node
   		}
 	
