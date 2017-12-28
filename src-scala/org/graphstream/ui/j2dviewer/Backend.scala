@@ -31,18 +31,17 @@
  */
 package org.graphstream.ui.j2dviewer
 
-import java.awt.RenderingHints
+import java.awt.{Container, Graphics2D, Rectangle, RenderingHints}
 import java.awt.geom.Point2D
 import java.awt.geom.AffineTransform
 import java.awt.geom.NoninvertibleTransformException
 import java.util.logging.{Level, Logger}
+
 import scala.collection.mutable.ArrayStack
-import java.awt.Graphics2D
 import org.graphstream.ui.geom.Point3
 import org.graphstream.ui.j2dviewer.renderer.GraphBackgroundRenderer
 import org.graphstream.ui.j2dviewer.renderer.shape.Shape
 import org.graphstream.ui.graphicGraph.StyleGroup
-import java.awt.Container
 
 /**
  * The graphic driver.
@@ -64,7 +63,7 @@ abstract class Backend {
     def close()
     
     /** Setup the back-end for a new rendering session. */
-    def prepareNewFrame(g2:Graphics2D)
+    def prepareNewFrame(g2:Graphics2D, width:Int, height:Int)
     
     /** Transform a point in graph units into pixel units.
       * @return the transformed point. */
@@ -136,18 +135,20 @@ abstract class Backend {
 /** A full Java-2D rendering back-end. */
 class BackendJ2D extends Backend {
 
-    protected var surface:Container = null
-    
-	protected var g2:Graphics2D = null
-    
-    protected val matrixStack = new ArrayStack[AffineTransform]()
-    
-    protected var Tx:AffineTransform = null
-    
-    protected var xT:AffineTransform = null
-    
-    protected val dummyPoint = new Point2D.Double()
-    
+  protected var surface:Container = null
+
+  protected var g2:Graphics2D = null
+
+  protected val matrixStack = new ArrayStack[AffineTransform]()
+
+  protected var clipBounds:Rectangle = new Rectangle()
+  protected var viewWidth:Int = 0
+  protected var viewHeight:Int = 0
+  protected var Tx:AffineTransform = null
+  protected var xT:AffineTransform = null
+
+  protected val dummyPoint = new Point2D.Double()
+
 	def graphics2D:Graphics2D = g2
 
 	def open(drawingSurface:Container) {
@@ -158,26 +159,38 @@ class BackendJ2D extends Backend {
         surface = null
     }
 	
-    override def prepareNewFrame(g2:Graphics2D) {
-	    this.g2 = g2
-        Tx = g2.getTransform
-        matrixStack.clear
-        //matrixStack.push(Tx)
+    override def prepareNewFrame(g2:Graphics2D, width:Int, height:Int) {
+      this.g2 = g2
+
+      viewWidth = width
+      viewHeight = height
+      clipBounds = g2.getClipBounds(clipBounds)
+
+      setTransform()
+
+      matrixStack.clear
+      //matrixStack.push(Tx)
     }
 
+  def setTransform() {
+    if ((Tx == null) || (clipBounds.width == viewWidth && clipBounds.height == viewHeight)) {
+      Tx = g2.getTransform
+      computeInverse()
+    }
+  }
+
 	def beginTransform() {
+    clipBounds = g2.getClipBounds(clipBounds)
 	}
 	
     def endTransform() {
-        //g2.setTransform(Tx)
-        Tx = g2.getTransform
-        computeInverse
+      setTransform()
     }
 
     protected def computeInverse() {
         try {
         	xT = new AffineTransform(Tx)
-        	xT.invert
+        	xT.invert()
         } catch {
             case e:NoninvertibleTransformException => Logger.getLogger(this.getClass().getSimpleName).log(Level.WARNING, "Cannot inverse matrix.", e)
         }
@@ -229,7 +242,8 @@ class BackendJ2D extends Backend {
         //computeInverse
     }
     
-    def setIdentity() = Tx.setToIdentity
+    def setIdentity() {}
+
     
     def translate(tx:Double, ty:Double, tz:Double) = g2.translate(tx, ty)
     

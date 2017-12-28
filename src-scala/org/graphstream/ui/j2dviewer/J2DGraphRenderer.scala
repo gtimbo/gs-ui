@@ -202,7 +202,7 @@ class J2DGraphRenderer extends GraphRenderer with StyleGroupListener {
   		    if(backend eq null)
   		        backend = new BackendJ2D // TODO choose it according to some setting ...
   		    
-  		    backend.prepareNewFrame(g)
+  		    backend.prepareNewFrame(g, width, height)
   		    camera.setBackend(backend)
   		        
   			val sgs = graph.getStyleGroups

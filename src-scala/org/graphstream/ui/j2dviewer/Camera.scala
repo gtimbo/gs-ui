@@ -197,12 +197,12 @@ class Camera(protected val graph:GraphicGraph) extends org.graphstream.ui.view.C
   		graph.getEachNode.foreach { n =>	
   			val node = n.asInstanceOf[GraphicNode]
 			
-  			if( (!node.hidden) && nodeContains( node, x, y ) )
+  			if( !node.hidden && nodeContains( node, x, y ) )
   				ge = node
   		}
 	
   		graph.spriteSet.foreach { sprite =>
-  			if( spriteContains( sprite, x, y ) )
+  			if( !sprite.hidden && spriteContains( sprite, x, y ) )
   				ge = sprite
   		}
   		
@@ -219,13 +219,13 @@ class Camera(protected val graph:GraphicGraph) extends org.graphstream.ui.view.C
   	def allNodesOrSpritesIn(graph:GraphicGraph, x1:Double, y1:Double, x2:Double, y2:Double):ArrayList[GraphicElement] = {
   		val elts = new ArrayList[GraphicElement]
 	
-        graph.getEachNode.foreach { node:Node =>	
-  			if(isNodeIn(node.asInstanceOf[GraphicNode], x1, y1, x2, y2))
+        graph.getEachNode.foreach { node:Node =>
+  			if(!node.asInstanceOf[GraphicNode].hidden && isNodeIn(node.asInstanceOf[GraphicNode], x1, y1, x2, y2))
   				elts.add( node.asInstanceOf[GraphicNode])
   		}
 		
   		graph.spriteSet.foreach { sprite:GraphicSprite =>
-  			if(isSpriteIn(sprite, x1, y1, x2, y2))
+  			if(!sprite.hidden && isSpriteIn(sprite, x1, y1, x2, y2))
   				elts.add(sprite)
   		}
 		
