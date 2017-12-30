@@ -144,8 +144,12 @@ class BackendJ2D extends Backend {
   protected var clipBounds:Rectangle = new Rectangle()
   protected var viewWidth:Int = 0
   protected var viewHeight:Int = 0
+
   protected var Tx:AffineTransform = null
   protected var xT:AffineTransform = null
+
+  protected var viewportTx:AffineTransform = null
+  protected var viewportXt:AffineTransform = null
 
   protected val dummyPoint = new Point2D.Double()
 
@@ -173,9 +177,13 @@ class BackendJ2D extends Backend {
     }
 
   def setTransform() {
-    if ((Tx == null) || (clipBounds.width == viewWidth && clipBounds.height == viewHeight)) {
-      Tx = g2.getTransform
-      computeInverse()
+    Tx = g2.getTransform
+    computeInverse()
+
+    // Store this transform as the viewport transform if we're rendering the entire viewport
+    if (clipBounds.width == viewWidth && clipBounds.height == viewHeight) {
+      viewportTx = Tx
+      viewportXt = xT
     }
   }
 
@@ -238,11 +246,19 @@ class BackendJ2D extends Backend {
         assert(!matrixStack.isEmpty)
         g2.setTransform(matrixStack.top)
         matrixStack.pop
+
+        // Restore the viewport transform
+        if (viewportTx != null) {
+          Tx = viewportTx
+          xT = viewportXt
+        }
+
         //Tx = matrixStack.top
         //computeInverse
     }
-    
-    def setIdentity() {}
+
+
+    def setIdentity() = Tx.setToIdentity
 
     
     def translate(tx:Double, ty:Double, tz:Double) = g2.translate(tx, ty)
